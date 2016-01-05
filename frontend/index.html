@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Moviechat: 1 chatroom per movie</title>
+        <link rel="shortcut icon" href="assets/favicon.png">
+
+        <meta name="description" content="1 chatroom per movie">
+        <meta name="keywords" content="chat, chatroom, movie, star wars">
+
+        <style>
+            #main {width: 100%; min-height: 100vh;}
+            h1 {font-size: 48pt; text-align: center; margin: .5em 1em; padding: 0;}
+            #searchbox_container {margin: 0 auto; width: 50%;}
+            #searchbox {font-size: 24pt; border: 1% solid black; margin: .5em 0; padding: 2%; display: block; width: 94%}
+            #results {}
+            #results a {width: 240px; height: 535px; position: relative; overflow: hidden; text-align: center;
+                display: inline-block; margin: 1em; border: 2px solid black;}
+            #results a span {display: inline-block; line-height: 42px;
+                                color: red; font-size: 36px; text-decoration: none; position: absolute; bottom: 0; left: 0; width: 100%;}
+            #results a img {width: 240px; position: absolute; top: 0; left: 0;}
+
+            #secondary {width: 50%; margin: 0 auto;}
+            h2 {font-size: 36pt; text-align: center; margin: .5em 1em; padding: 0;}
+
+        </style>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+
+        <script>
+            var queries = [];
+            var query_id = 1;
+            var query_last_received = 0;
+
+            $(function (){
+                $("#searchbox").val('');
+                $("#searchbox").keydown(function (e){
+                    if (e.keyCode == 10 || e.keyCode == 13){
+                        $("#results > a:first-child").trigger("click");
+                    }
+                });
+                $("#searchbox").on('change keyup paste', function (){
+                    var q = this.value.replace(' ', '_', 'g');
+                    if (!q) return;
+                    queries[ q ] = query_id++;
+                    var url = "http://sg.media-imdb.com/suggests/" + q[0] + "/" + q + ".json";
+                    window["imdb$" + q] = function (data) {searchCallback(data);};
+                    $.getScript(url);
+                });
+            });
+
+            function searchCallback(data){
+                var qid = queries[ data.q ];
+                if (qid < query_last_received) return;
+                query_last_received = qid;
+
+                $("#results").html('');
+                for (var i in data.d){
+                    var result = $("<a>").attr('href', '#').data('imdb-id', data.d[i].id);
+                    if (data.d[i].i)
+                        $("<img>").attr("src", data.d[i].i[0]).appendTo(result);
+                    $("<span>").html(data.d[i].l).appendTo(result);
+
+                    result.appendTo( $("#results") );
+                    result.click(function () {
+                        // alert( $(this).data('imdb-id') );
+                        window.location.hash = "#" + $(this).text();
+                        return false;
+                    });
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <div id="main">
+            <h1>What movie do you want to chat about?</h1>
+            <div id="searchbox_container">
+                <input id="searchbox" type="text" placeholder="Star Wars...">
+            </div>
+            <div id="results"></div>
+        </div>
+
+        <!--
+        <div id="secondary">
+            <h2>Popular chat rooms</h2>
+            <ul>
+                <li>Star Wars Episode VII</li>
+                <li>Some Other Movie</li>
+                <li>Whatever</li>
+            </ul>
+        </div>
+        -->
+    </body>
+
+</html>
